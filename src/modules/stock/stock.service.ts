@@ -1,20 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Db } from 'mongodb';
-import { InjectDb } from '../common/common.decorators';
+import { Repository } from '@common';
 
 @Injectable()
 export class StockService {
-  constructor(@InjectDb() private readonly db: Db) {}
+  constructor(private readonly repo: Repository<any>) {}
 
   async getStockData() {
-    const stockCollection = this.db.collection('stock');
-    const stockData = await stockCollection.find().toArray();
-    return stockData;
+    return await this.repo.findAll('stock');
   }
 
   async createLot(lotData: any) {
-    const stockCollection = this.db.collection('stock');
-    const result = await stockCollection.insertOne(lotData);
-    return result;
+    return await this.repo.create('stock', lotData);
+  }
+
+  async updateLot(lotData: any) {
+    return await this.repo.update('stock', lotData.symbol, lotData);
+  }
+
+  async deleteLot(id: string) {
+    return await this.repo.delete('stock', id);
   }
 }

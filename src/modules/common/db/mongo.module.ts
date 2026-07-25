@@ -3,6 +3,7 @@ import { AppConfigModule } from '../config/config.module';
 import { AppConfigService } from '../config/config.service';
 import { MongoClient } from 'mongodb';
 import { MONGO_DB } from '../const';
+import { Repository } from './repository';
 
 @Module({})
 export class MongoDbModule {
@@ -21,8 +22,9 @@ export class MongoDbModule {
             return client.db(config.getConfig('MONGO_DB_NAME'));
           },
         },
+        Repository,
       ],
-      exports: [MONGO_DB],
+      exports: [MONGO_DB, Repository],
     };
   }
 }

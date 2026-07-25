@@ -1,4 +1,4 @@
-export interface Metadata {
+export interface EntityMetadata {
   id: string;
   createdAt: Date;
   updatedAt: Date;

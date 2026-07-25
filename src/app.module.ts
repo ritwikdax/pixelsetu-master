@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { GDriveModule, TelegramModule } from './modules';
 import { StockModule } from './modules/stock';
 import { AppConfigModule } from './modules/common/config/config.module';
-import { DatabaseModule } from './modules/common';
+import { ContextModule, DatabaseModule, UtilsModule } from '@common';
 import { CacheModule } from './modules/common/cache/cache.module';
 
 @Module({
@@ -15,6 +15,8 @@ import { CacheModule } from './modules/common/cache/cache.module';
     AppConfigModule,
     GDriveModule,
     CacheModule.forRootAsync(),
+    ContextModule,
+    UtilsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
