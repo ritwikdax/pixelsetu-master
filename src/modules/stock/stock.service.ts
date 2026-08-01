@@ -13,8 +13,8 @@ export class StockService {
     return await this.repo.create('stock', lotData);
   }
 
-  async updateLot(lotData: any) {
-    return await this.repo.update('stock', lotData.symbol, lotData);
+  async updateLot(id: string, lotData: any) {
+    return await this.repo.update('stock', id, lotData);
   }
 
   async deleteLot(id: string) {

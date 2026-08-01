@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Delete, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Delete,
+  Param,
+  Patch,
+} from '@nestjs/common';
 import { StockService } from './stock.service';
 import { ValidateSchema } from '@common';
 import { LotSchema } from './lot.schema';
@@ -8,6 +16,13 @@ import z from 'zod';
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 
+  @ValidateSchema({
+    query: z.object({
+      limit: z.number().optional(),
+      sort: z.enum(['asc', 'desc']).optional(),
+      nextToken: z.string().optional(),
+    }),
+  })
   @Get()
   async getStock() {
     return this.stockService.getStockData();
@@ -24,9 +39,9 @@ export class StockController {
   @ValidateSchema({
     body: LotSchema.partial(),
   })
-  @Post('update')
-  async updateLot(@Body() body: any) {
-    return this.stockService.updateLot(body);
+  @Patch(':id')
+  async updateLot(@Param('id') id: string, @Body() body: any) {
+    return this.stockService.updateLot(id, body);
   }
 
   @ValidateSchema({

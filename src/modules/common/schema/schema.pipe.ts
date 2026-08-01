@@ -32,7 +32,9 @@ export class SchemaValidationPipe<
     if (!result.success) {
       throw new AppError(
         'SchemaValidationError',
-        result.error.issues.map((err) => err.message).join(', '),
+        result.error.issues
+          .map((err) => `${err.path.join('.')}: ${err.message}`)
+          .join(', '),
       );
     }
 

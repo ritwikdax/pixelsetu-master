@@ -5,6 +5,8 @@ export * from './context/context.module';
 export * from './context/context.service';
 export * from './utils/utils.module';
 export * from './utils/utils.service';
+export * from './http/http.module';
+export * from './http/http.service';
 
 export * from './error/global.filter';
 export * from './error/app.error';

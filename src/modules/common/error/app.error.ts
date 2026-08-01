@@ -19,6 +19,10 @@ const APP_ERRORS = {
     code: 500,
     message: 'Internal server error',
   },
+  Unsupported: {
+    code: 400,
+    message: 'Unsupported operation',
+  },
 };
 
 class AppError extends Error {

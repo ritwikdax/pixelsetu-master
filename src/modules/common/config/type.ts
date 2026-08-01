@@ -9,4 +9,8 @@ export interface AppConfig {
   MONGO_DB_NAME: string;
   GCP_SERVICE_ACCOUNT_B64: string;
   REDIS_URI: string;
+  JWT_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_REDIRECT_URI: string;
 }

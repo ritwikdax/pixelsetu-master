@@ -1,3 +1,5 @@
+import { ApplicationRole } from '@/modules/rbac/role.interface';
+
 export interface IStore {
   //Metadata
   requestId: string;
@@ -6,10 +8,10 @@ export interface IStore {
   requestTimestamp: string; // ISO 8601 format
 
   // User-related information
-  username: string;
-  userSessionId: string;
-  permissions: string[];
-  roles: string[];
+  userId: string;
+  orgId: string;
+  role: ApplicationRole;
+  permissions: string[]; //Not in use yet
 }
 
 export class ContextStore {

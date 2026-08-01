@@ -6,8 +6,6 @@ import { MongoDbModule } from './mongo.module';
   imports: [MongoDbModule.forRootAsync()],
   controllers: [],
   providers: [],
-  // Re-export the module that owns MONGO_DB. Nest only allows a module to
-  // export providers declared locally or from a directly imported module.
   exports: [MongoDbModule],
 })
 export class DatabaseModule {}

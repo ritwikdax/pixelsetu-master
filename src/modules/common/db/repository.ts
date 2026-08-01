@@ -1,6 +1,6 @@
 import { Db, DeleteResult, InsertOneResult } from 'mongodb';
 import { InjectDb } from '../common.decorators';
-import { EntityMetadata } from '../type';
+import { EntityMetadata } from '../config/type';
 import { Injectable } from '@nestjs/common';
 import { uuidv7 } from 'uuidv7';
 import { StandardFilter } from './interface';

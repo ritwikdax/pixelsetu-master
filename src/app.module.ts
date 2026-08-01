@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { GDriveModule, TelegramModule } from './modules';
+import {
+  GDriveModule,
+  IdentityModule,
+  RBACModule,
+  TelegramModule,
+} from './modules';
 import { StockModule } from './modules/stock';
 import { AppConfigModule } from './modules/common/config/config.module';
 import { ContextModule, DatabaseModule, UtilsModule } from '@common';
@@ -17,6 +22,8 @@ import { CacheModule } from './modules/common/cache/cache.module';
     CacheModule.forRootAsync(),
     ContextModule,
     UtilsModule,
+    IdentityModule,
+    RBACModule,
   ],
   controllers: [AppController],
   providers: [AppService],
