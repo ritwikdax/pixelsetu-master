@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Logger } from '@nestjs/common';
 import { AppConfigModule } from '../config/config.module';
 import { AppConfigService } from '../config/config.service';
 import { MongoClient } from 'mongodb';
@@ -23,9 +23,20 @@ export class MongoDbModule {
           provide: MONGO_CLIENT,
           inject: [AppConfigService],
           useFactory: async (config: AppConfigService) => {
-            const client = new MongoClient(config.getConfig('MONGODB_URI'));
-            await client.connect();
-            return client;
+            const logger = new Logger('MongoDbModule');
+            const uri = config.getConfig('MONGODB_URI');
+            const client = new MongoClient(uri);
+            try {
+              await client.connect();
+              logger.log('MongoDB connected');
+              return client;
+            } catch (err) {
+              logger.error(
+                'MongoDB connection failed',
+                err instanceof Error ? err.stack : String(err),
+              );
+              throw err;
+            }
           },
         },
         Repository,

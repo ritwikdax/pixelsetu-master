@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { ContextStore } from './store';
 import { IStore } from './store';
+import { requestContextAls } from './context.als';
 
 @Injectable()
 export class ContextService {
-  private readonly als = new AsyncLocalStorage<ContextStore>();
-
   run(store: ContextStore, callback: () => void) {
-    this.als.run(store, callback);
+    requestContextAls.run(store, callback);
   }
 
   getStore(): ContextStore {
-    const store = this.als.getStore();
+    const store = requestContextAls.getStore();
 
     if (!store) {
       throw new Error('No request context available');
@@ -21,8 +19,16 @@ export class ContextService {
     return store;
   }
 
+  tryGetStore(): ContextStore | undefined {
+    return requestContextAls.getStore();
+  }
+
   get<K extends keyof IStore>(key: K): IStore[K] | undefined {
     return this.getStore().get(key);
+  }
+
+  tryGet<K extends keyof IStore>(key: K): IStore[K] | undefined {
+    return requestContextAls.getStore()?.get(key);
   }
 
   getOrThrow<K extends keyof IStore>(key: K): IStore[K] {

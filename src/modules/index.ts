@@ -1,4 +1,4 @@
 export * from './telegram';
 export * from './gdrive';
 export * from './rbac';
-export * from './identity';
+export * from './auth';

@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import crypto from 'crypto';
 import { CACHE_CLIENT } from './cache.constants';
 
@@ -12,6 +12,7 @@ export interface ICacheService {
 }
 
 const DEFAULT_TTL = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
+const cacheLogger = new Logger('Cache');
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -67,11 +68,13 @@ export function Cache(options?: CacheOptions): MethodDecorator {
       await delay(5 * 1000);
 
       if (cached !== null && cached !== undefined) {
-        console.log(`Cache hit for ${cacheKey}`);
+        cacheLogger.debug(`Cache hit for ${cacheKey}`);
         return cached;
       }
 
-      console.log(`Cache miss for ${cacheKey}. Executing original method.`);
+      cacheLogger.debug(
+        `Cache miss for ${cacheKey}. Executing original method.`,
+      );
       const result = await original.apply(this, args);
 
       await this.cache.set(cacheKey, result, options?.ttl ?? DEFAULT_TTL);

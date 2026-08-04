@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Db } from 'mongodb';
 import { InjectDb } from '@common';
-import { COLLECTIONS } from '../const.global';
+import { COLLECTIONS } from '@/modules/const.global';
+import { Membership } from './schema';
 
 @Injectable()
 export class MembershipRepository {
   constructor(@InjectDb() private readonly db: Db) {}
+
+  async createMembership(membership: Membership) {
+    return await this.db.collection(COLLECTIONS.MEMBERSHIPS).insertOne(membership);
+  }
 
   async getEffectiveOrgsOfUser(userId: string) {
     const pipeline = [

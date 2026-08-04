@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EntityMetadata } from '../interface.global';
+import { EntityMetadata } from '@/modules/interface.global';
 
 export const FeaturedImageSchema = z.object({
   id: z.string(),
@@ -56,9 +56,15 @@ const User = z.object({
   applicationPool: z.array(z.string()),
 });
 
+export const InviteUserToOrgSchema = z.object({
+  email: z.email(),
+  role: z.enum(['admin', 'editor', 'viewer']),
+});
+
 export type FeaturedImage = z.infer<typeof FeaturedImageSchema> &
   EntityMetadata;
 export type Org = z.infer<typeof OrganizationSchema> & EntityMetadata;
 export type Membership = z.infer<typeof Membership> & EntityMetadata;
 export type User = z.infer<typeof User> & EntityMetadata;
 export type OrgRole = z.infer<typeof OrganizationRoles>;
+export type InviteUserToOrg = z.infer<typeof InviteUserToOrgSchema>;

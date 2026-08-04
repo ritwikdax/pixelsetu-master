@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Db, MongoClient } from 'mongodb';
 import { InjectDb, InjectDbClient } from '@common';
 import { User, Org, Membership } from './schema';
-import { COLLECTIONS } from '../const.global';
+import { COLLECTIONS } from '@/modules/const.global';
 
 @Injectable()
 export class UserRepository {
@@ -25,7 +25,6 @@ export class UserRepository {
       .findOne({ id: userId }, { projection: { _id: 0 } });
   }
 
-  //Onboard New User
   async onboardNewUser(
     userData: User,
     orgData: Org,
@@ -36,17 +35,14 @@ export class UserRepository {
       session = this.dbClient.startSession();
       session.startTransaction();
 
-      //Create User Entity
       await this.db
         .collection<User>(COLLECTIONS.USERS)
         .insertOne(userData, { session });
 
-      //Create Default Org for the User
       await this.db
         .collection<Org>(COLLECTIONS.ORGS)
         .insertOne(orgData, { session });
 
-      //Add Membership entry for the user in the default org
       await this.db
         .collection(COLLECTIONS.MEMBERSHIPS)
         .insertOne(membershipData, { session });
@@ -61,7 +57,6 @@ export class UserRepository {
   }
 
   async addApplication(userId: string, appId: string) {
-    // Implement logic to add an application to the user's profile
     return await this.db
       .collection(COLLECTIONS.USERS)
       .updateOne({ id: userId }, { $addToSet: { applicationPool: appId } });

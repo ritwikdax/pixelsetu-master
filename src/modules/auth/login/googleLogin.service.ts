@@ -1,4 +1,4 @@
-import { AppError, HttpService } from '@/modules/common';
+import { AppError, AppLogger, HttpService } from '@/modules/common';
 import jwt from 'jsonwebtoken';
 import { AppConfigService } from '@/modules/common/config/config.service';
 import { GoogleTokenClaims, LoginService, StandardClaims } from './interface';
@@ -8,6 +8,7 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class GoogleLoginService implements LoginService {
   private readonly GRANT_TYPE: string = 'authorization_code';
+  private readonly logger = new AppLogger(GoogleLoginService.name);
 
   constructor(
     private readonly http: HttpService,
@@ -34,7 +35,10 @@ export class GoogleLoginService implements LoginService {
       const decodedToken = this.decodeToken(token);
       return decodedToken;
     } catch (err) {
-      console.error('Error exchanging Google OAuth token:', err);
+      this.logger.error(
+        'Failed to exchange Google OAuth token',
+        err instanceof Error ? err.stack : String(err),
+      );
       throw new Error('Failed to exchange Google OAuth token');
     }
   }
@@ -44,7 +48,10 @@ export class GoogleLoginService implements LoginService {
       const decodedToken = jwt.decode(token) as GoogleTokenClaims;
       return decodedToken;
     } catch (err) {
-      console.error('Error decoding Google OAuth token:', err);
+      this.logger.error(
+        'Failed to decode Google OAuth token',
+        err instanceof Error ? err.stack : String(err),
+      );
       throw new Error('Failed to decode Google OAuth token');
     }
   }

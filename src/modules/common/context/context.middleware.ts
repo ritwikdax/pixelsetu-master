@@ -1,4 +1,4 @@
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { ContextService } from './context.service';
 import { Request, Response, NextFunction } from 'express';
 import { ContextStore } from './store';
@@ -12,8 +12,6 @@ export class ContextMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    Logger.log(`Incoming request: ${req.method} ${req.originalUrl}`);
-
     const store = new ContextStore({
       requestId:
         (req.headers['x-request-id'] as string) || this.utilsService.uuid(),

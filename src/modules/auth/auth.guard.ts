@@ -1,19 +1,33 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AppError, ContextService } from '../common';
+import { AppError } from '../common/error/app.error';
+import { AppLogger } from '../common/logging/app.logger';
+import { ContextService } from '../common/context/context.service';
+import { ALLOW_ANNONYMOUS_KEY } from './auth.decorators';
 import { JwtService } from './jwt.service';
 import { Token } from './login/interface';
 import { COOKIE_NAME } from '../const.global';
 
 @Injectable()
-export class IdentityGuard implements CanActivate {
+export class AuthGuard implements CanActivate {
+  private readonly logger = new AppLogger(AuthGuard.name);
+
   constructor(
     private readonly ctx: ContextService,
     private readonly jwtService: JwtService,
+    private readonly reflector: Reflector,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    //Extract cookie from request headers
+    const allowAnnonymous = this.reflector.getAllAndOverride<boolean>(
+      ALLOW_ANNONYMOUS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (allowAnnonymous) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const cookieHeader = request.headers['cookie'] || '';
     const cookies = cookieHeader
@@ -26,7 +40,6 @@ export class IdentityGuard implements CanActivate {
 
     const tokenFromCookie = cookies[COOKIE_NAME];
 
-    //Extract token from request headers as bearer token
     const authHeader = request.headers['authorization'] || '';
 
     const tokenFromHeader = authHeader.startsWith('Bearer ')
@@ -34,15 +47,16 @@ export class IdentityGuard implements CanActivate {
       : null;
 
     if (!tokenFromCookie && !tokenFromHeader) {
+      this.logger.warn('Unauthorized: no token provided');
       throw new AppError('UnauthorizedError', 'No token provided');
     }
 
-    //Take token from cookie if available, else take from header
     const token = tokenFromCookie || tokenFromHeader;
 
     const decodedToken = this.jwtService.verify<Token>(token);
 
     if (!decodedToken) {
+      this.logger.warn('Unauthorized: invalid token');
       throw new AppError('UnauthorizedError', 'Invalid token');
     } else {
       this.ctx.set('userId', decodedToken['userId']);

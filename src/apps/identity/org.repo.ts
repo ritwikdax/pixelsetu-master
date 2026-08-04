@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Db } from 'mongodb';
 import { InjectDb } from '@common';
-import { Org } from './schema';
-import { COLLECTIONS } from '../const.global';
+import { Org, OrgRole } from './schema';
+import { COLLECTIONS } from '@/modules/const.global';
 
 @Injectable()
 export class OrgRepository {
@@ -91,5 +91,9 @@ export class OrgRepository {
 
   async checkMembership(orgId: string, userId: string) {
     return await this.db.collection('memberships').findOne({ orgId, userId });
+  }
+
+  async inviteUserToOrg(inviteData: Record<string, any>) {
+    return await this.db.collection(COLLECTIONS.ORG_INVITATIONS).insertOne(inviteData);
   }
 }

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectDb } from '@common';
 import { User } from './schema';
 import { Db } from 'mongodb';
-import { IdentityOnboardData, IdentityProvider } from './login/interface';
-import { COLLECTIONS } from '../const.global';
+import { IdentityOnboardData, IdentityProvider } from '@/modules/auth/login/interface';
+import { COLLECTIONS } from '@/modules/const.global';
 
 @Injectable()
 export class IdentityRepo {

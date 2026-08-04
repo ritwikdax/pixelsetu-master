@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { AppError, ContextService } from '@modules/common';
-import { UserRepository } from './user.repo.js';
-import { OrgRepository } from './org.repo.js';
+import { AppError, ContextService } from '@common';
+import { UserRepository } from './user.repo';
+import { OrgRepository } from './org.repo';
 import { uuidv7 } from 'uuidv7';
-import { StandardClaims } from './login/interface';
+import { StandardClaims } from '@/modules/auth/login/interface';
+import { EmailService } from '@/modules/common/email';
 
 @Injectable()
 export class UserManagementService {
@@ -12,6 +13,7 @@ export class UserManagementService {
     private readonly context: ContextService,
     private readonly userRepo: UserRepository,
     private readonly orgRepo: OrgRepository,
+    private readonly emailService: EmailService,
   ) {}
 
   async findUserByEmail(email: string) {
@@ -42,7 +44,6 @@ export class UserManagementService {
     return defaultOrg;
   }
 
-  //Onboard New User
   async onboardNewUser(userData: StandardClaims) {
     const newUserId = uuidv7();
     const newOrgId = uuidv7();
@@ -85,6 +86,12 @@ export class UserManagementService {
         updatedAt: now,
       },
     );
+
+    await this.emailService.sendWelcomeEmail({
+      name: `${userData.firstName} ${userData.lastName}`,
+      email: userData.email,
+      ctaUrl: 'https://pixelsetu.com',
+    });
 
     return {
       userId: newUserId,

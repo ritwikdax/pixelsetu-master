@@ -19,7 +19,7 @@ export class LoginController {
         domain: '.pixelsetu.com',
         sameSite: 'none',
       }),
-      maxAge: 60 * 24 * 60 * 60 * 1000, // 60 days
+      maxAge: 60 * 24 * 60 * 60 * 1000,
       path: '/',
     });
 
