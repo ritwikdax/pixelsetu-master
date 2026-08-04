@@ -56,6 +56,15 @@ export class IdentityController {
     };
   }
 
+  @Get('org/members')
+  async getOrgMembers() {
+    return {
+      success: true,
+      message: 'Organization members retrieved successfully',
+      data: await this.orgService.getOrgMembers(),
+    };
+  }
+
   @Role('owner')
   @Post('org/invite')
   @ValidateSchema({

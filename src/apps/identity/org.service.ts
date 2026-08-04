@@ -6,7 +6,7 @@ import { UserRepository } from './user.repo';
 import { EmailService } from '@/modules/common/email';
 import { MembershipRepository } from './membership.repo';
 import { JwtService } from '@/modules';
-import { AcceptInviteTokenPayload } from './identity.interface';
+import { AcceptInviteTokenPayload, OrgMember } from './identity.interface';
 import { uuidv7 } from 'uuidv7';
 
 @Injectable()
@@ -24,6 +24,13 @@ export class OrgService {
   async getOrgDetails() {
     const orgId = this.context.getOrThrow('orgId');
     return await this.orgRepository.getOrgDetails(orgId);
+  }
+
+  async getOrgMembers(): Promise<OrgMember[]> {
+    const orgId = this.context.getOrThrow('orgId');
+    return (await this.membershipRepo.getAllMembersOfOrg(
+      orgId,
+    )) as OrgMember[];
   }
 
   async updateOrgDetails(updatedData: Partial<Org>) {
@@ -70,12 +77,16 @@ export class OrgService {
 
     this.logger.log(`Inviting user ${email} to org ${org.displayName} with role ${role}`, {ctaUrl});
 
-    return await this.emailService.sendOrgInvitationEmail({
+    await this.emailService.sendOrgInvitationEmail({
       to: email,
       ctaUrl: ctaUrl,
       orgName: org.displayName || '',
       orgRole: role,
     });
+
+    return {
+      ctaUrl
+    }
   }
 
   async acceptInvite(token: string) {
