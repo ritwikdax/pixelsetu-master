@@ -38,7 +38,7 @@ export const OrganizationSchema = z.object({
 
 const OrganizationRoles = z.enum(['owner', 'admin', 'editor', 'viewer']);
 
-const Membership = z.object({
+export const MembershipSchema = z.object({
   userId: z.string(),
   role: OrganizationRoles,
   permissions: z.array(z.string()).optional(),
@@ -64,7 +64,7 @@ export const InviteUserToOrgSchema = z.object({
 export type FeaturedImage = z.infer<typeof FeaturedImageSchema> &
   EntityMetadata;
 export type Org = z.infer<typeof OrganizationSchema> & EntityMetadata;
-export type Membership = z.infer<typeof Membership> & EntityMetadata;
+export type Membership = z.infer<typeof MembershipSchema> & EntityMetadata;
 export type User = z.infer<typeof User> & EntityMetadata;
 export type OrgRole = z.infer<typeof OrganizationRoles>;
 export type InviteUserToOrg = z.infer<typeof InviteUserToOrgSchema>;

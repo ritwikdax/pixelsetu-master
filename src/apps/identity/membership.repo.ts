@@ -118,4 +118,10 @@ export class MembershipRepository {
       .aggregate(pipeline)
       .toArray();
   }
+
+  async deleteMembership(orgId: string, userId: string) {
+    return await this.db
+      .collection(COLLECTIONS.MEMBERSHIPS)
+      .deleteOne({ orgId, userId });
+  }
 }

@@ -90,7 +90,7 @@ export class OrgRepository {
   }
 
   async checkMembership(orgId: string, userId: string) {
-    return await this.db.collection('memberships').findOne({ orgId, userId });
+    return await this.db.collection(COLLECTIONS.MEMBERSHIPS).findOne({ orgId, userId });
   }
 
   async inviteUserToOrg(inviteData: Record<string, any>) {

@@ -5,15 +5,19 @@ import { AppConfigService } from '../common/config/config.service';
 @Injectable()
 export class JwtService {
   private readonly DOMAIN = 'pixelsetu.com';
+  private readonly DEFAULT_OPTIONS: jwt.SignOptions = {
+    algorithm: 'HS256',
+    expiresIn: '7d',
+  };
 
   constructor(private readonly config: AppConfigService) {}
 
-  sign(payload: Record<string, any>): string {
+  sign(payload: Record<string, any>, options?: jwt.SignOptions): string {
     const jwtSecret = this.config.getConfig('JWT_SECRET');
 
     return jwt.sign({ ...payload, iss: this.DOMAIN }, jwtSecret, {
-      algorithm: 'HS256',
-      expiresIn: '7d',
+      ...this.DEFAULT_OPTIONS,
+      ...options,
     });
   }
 

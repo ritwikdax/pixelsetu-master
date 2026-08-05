@@ -34,6 +34,15 @@ export class OrgService {
   }
 
   async updateOrgDetails(updatedData: Partial<Org>) {
+
+    if(updatedData.namespace){
+      const isAvailable = await this.orgRepository.checkNamespaceAvailability(updatedData.namespace);
+      if(!isAvailable) {
+        throw new AppError("Unsupported", "Namespace is not available");
+      }
+    }
+
+
     const orgId = this.context.getOrThrow('orgId');
     await this.orgRepository.updateOrgDetails(updatedData, orgId);
   }

@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@/modules/auth/auth.guard';
 import { OrgService } from './org.service';
 import { UserManagementService } from './user.service';
 import { Role, RoleGuard } from '@/modules/rbac';
 import { ValidateSchema } from '@common';
-import { InviteUserToOrgSchema, Org, OrganizationSchema } from './schema';
-import type { Response } from 'express';
+import { InviteUserToOrgSchema, MembershipSchema, Org, OrganizationSchema } from './schema';
+import { type Response } from 'express';
 import type { InviteUserToOrg } from './schema';
 import { COOKIE_NAME } from '@/modules/const.global';
 import { AllowAnnonymous } from '@/modules';
+import { CookieService } from './cookie.service';
 
 @UseGuards(AuthGuard, RoleGuard)
 @Controller('identity')
@@ -16,6 +17,7 @@ export class IdentityController {
   constructor(
     private readonly orgService: OrgService,
     private readonly userService: UserManagementService,
+    private readonly cookieService: CookieService,
   ) { }
 
   @Get('healthcheck')
@@ -47,6 +49,25 @@ export class IdentityController {
     return res.status(200).json({ success: true, message: 'Logged out successfully' });
   }
 
+  @Patch('me/switch-org')
+  @ValidateSchema({
+    body: MembershipSchema.pick({ orgId: true }).strict(),
+  })
+  async changeOrgContext(@Res() res: Response, @Body() body: {orgId: string}){
+
+    const { orgId } = body;
+    const newToken = await this.userService.switchOrg(orgId);
+    await this.cookieService.setLoginCookie(res, newToken);
+    return res.status(200).json({ success: true, message: 'Organization context changed successfully' });
+  }
+
+  @Delete('me/leave-org')
+  async leaveOrg(@Res() res: Response){
+    await this.userService.leaveOrg();
+    await this.cookieService.clearCookie(res);
+    return res.status(200).json({ success: true, message: 'User left the organization successfully' });
+  }
+
   @Get('org')
   async getOrg() {
     return {
@@ -56,6 +77,7 @@ export class IdentityController {
     };
   }
 
+  @Role('owner')
   @Get('org/members')
   async getOrgMembers() {
     return {

@@ -10,6 +10,7 @@ import { OrgRepository } from './org.repo';
 import { MembershipRepository } from './membership.repo';
 import { UserLoginService } from './login/login.service';
 import { EmailModule } from '@/modules/common/email';
+import { CookieService } from './cookie.service';
 
 @Module({
   imports: [CommonModule, EmailModule],
@@ -22,6 +23,7 @@ import { EmailModule } from '@/modules/common/email';
     OrgRepository,
     MembershipRepository,
     UserLoginService,
+    CookieService,
   ],
 })
 export class IdentityModule {}

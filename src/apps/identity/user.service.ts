@@ -3,8 +3,10 @@ import { AppError, ContextService } from '@common';
 import { UserRepository } from './user.repo';
 import { OrgRepository } from './org.repo';
 import { uuidv7 } from 'uuidv7';
-import { StandardClaims } from '@/modules/auth/login/interface';
+import { StandardClaims, Token } from '@/modules/auth/login/interface';
 import { EmailService } from '@/modules/common/email';
+import { JwtService } from '@/modules';
+import { MembershipRepository } from './membership.repo';
 
 @Injectable()
 export class UserManagementService {
@@ -14,6 +16,8 @@ export class UserManagementService {
     private readonly userRepo: UserRepository,
     private readonly orgRepo: OrgRepository,
     private readonly emailService: EmailService,
+    private readonly jwtService: JwtService,
+    private readonly membershipRepo: MembershipRepository,
   ) {}
 
   async findUserByEmail(email: string) {
@@ -113,5 +117,51 @@ export class UserManagementService {
     }
     const userId = this.context.getOrThrow('userId');
     return await this.userRepo.removeApplication(userId, appId);
+  }
+
+  async switchOrg(orgId: string) {
+    const userId = this.context.getOrThrow('userId');
+    const isMember = await this.orgRepo.checkMembership(orgId, userId);
+
+    if (!isMember) {
+      throw new AppError('UnauthorizedError', 'User is not a member of the organization');
+    }
+
+    const org = await this.orgRepo.getOrgDetailsById(orgId);
+
+    if (!org) {
+      throw new AppError('NotFoundError', 'Organization not found');
+    }
+
+    const newClaims: Token ={
+      type: 'human',
+      userId: userId,
+      orgId: orgId,
+      role: isMember.role,
+    }
+
+    const role = isMember.role;
+    return this.jwtService.sign(newClaims, {
+      expiresIn: role === 'owner' ? '30d' : '1d',
+    });
+
+  }
+
+  async leaveOrg() {
+    const userId = this.context.getOrThrow('userId');
+    const orgId = this.context.getOrThrow('orgId');
+
+    const isMember = await this.orgRepo.checkMembership(orgId, userId);
+    if (!isMember) {
+      throw new AppError('UnauthorizedError', 'User is not a member of the organization');
+    }
+
+    if (isMember.role === 'owner') {
+      throw new AppError('UnauthorizedError', 'Owner cannot leave the organization');
+    }
+
+    await this.membershipRepo.deleteMembership(orgId, userId);
+    
+
   }
 }
