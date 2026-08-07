@@ -19,3 +19,4 @@ export { CacheService } from './cache/cache.service';
 
 export { AppLogger } from './logging/app.logger';
 export { LoggingInterceptor } from './logging/logging.interceptor';
+export { LoggingModule } from './logging/logging.module';

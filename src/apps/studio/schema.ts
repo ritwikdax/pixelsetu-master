@@ -60,6 +60,20 @@ export const AlbumSchema = z.object({
   status: AlbumStatusSchema,
 });
 
+export const CreateAlbumSchema = AlbumSchema.omit({
+  id: true,
+  alreadySelectedCount: true,
+}).extend({
+  projectId: z.uuidv7(),
+  status: AlbumStatusSchema.optional().default('not_started'),
+});
+
+export const UpdateAlbumSchema = AlbumSchema.omit({
+  id: true,
+  projectId: true,
+  projectName: true,
+}).partial();
+
 export const PaymentModeSchema = z.enum(['online', 'offline']);
 
 export const PaymentSchema = z.object({
@@ -72,10 +86,26 @@ export const PaymentSchema = z.object({
   notify: z.boolean(),
 });
 
+export const CreatePaymentSchema = PaymentSchema.omit({
+  id: true,
+}).extend({
+  projectId: z.uuidv7(),
+});
+
+export const UpdatePaymentSchema = PaymentSchema.omit({
+  id: true,
+  projectId: true,
+  projectName: true,
+}).partial();
+
 export type BookingCategory = z.infer<typeof BookingCategorySchema>;
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type Project = z.infer<typeof ProjectSchema> & EntityMetadata;
 export type AlbumStatus = z.infer<typeof AlbumStatusSchema>;
 export type Album = z.infer<typeof AlbumSchema> & EntityMetadata;
+export type CreateAlbum = z.infer<typeof CreateAlbumSchema>;
+export type UpdateAlbum = z.infer<typeof UpdateAlbumSchema>;
 export type PaymentMode = z.infer<typeof PaymentModeSchema>;
 export type Payment = z.infer<typeof PaymentSchema> & EntityMetadata;
+export type CreatePayment = z.infer<typeof CreatePaymentSchema>;
+export type UpdatePayment = z.infer<typeof UpdatePaymentSchema>;

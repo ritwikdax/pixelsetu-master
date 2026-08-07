@@ -7,10 +7,12 @@ import { UtilsModule } from './utils/utils.module';
 import { AuthModule } from '../auth/auth.module';
 import { RBACModule } from '../rbac/role.module';
 import { EmailModule } from './email';
+import { LoggingModule } from './logging/logging.module';
 
 @Global()
 @Module({
   imports: [
+    LoggingModule,
     AppConfigModule,
     DatabaseModule,
     CacheModule.forRootAsync(),

@@ -10,6 +10,7 @@ export interface IStore {
   // User-related information
   userId: string;
   orgId: string;
+  email: string;
   role: ApplicationRole;
   permissions: string[]; //Not in use yet
 }

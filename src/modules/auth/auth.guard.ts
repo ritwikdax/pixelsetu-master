@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AppError } from '../common/error/app.error';
 import { AppLogger } from '../common/logging/app.logger';
 import { ContextService } from '../common/context/context.service';
-import { ALLOW_ANNONYMOUS_KEY } from './auth.decorators';
+import { ALLOW_ANNONYMOUS_KEY, ALLOW_MFA_PENDING_KEY } from './auth.decorators';
 import { JwtService } from './jwt.service';
 import { Token } from './login/interface';
 import { COOKIE_NAME } from '../const.global';
@@ -21,6 +21,11 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const allowAnnonymous = this.reflector.getAllAndOverride<boolean>(
       ALLOW_ANNONYMOUS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    const allowMfaPending = this.reflector.getAllAndOverride<boolean>(
+      ALLOW_MFA_PENDING_KEY,
       [context.getHandler(), context.getClass()],
     );
 
@@ -58,11 +63,20 @@ export class AuthGuard implements CanActivate {
     if (!decodedToken) {
       this.logger.warn('Unauthorized: invalid token');
       throw new AppError('UnauthorizedError', 'Invalid token');
-    } else {
-      this.ctx.set('userId', decodedToken['userId']);
-      this.ctx.set('role', decodedToken['role']);
-      this.ctx.set('orgId', decodedToken['orgId']);
     }
+
+    if (decodedToken.mfaPending && !allowMfaPending) {
+      this.logger.warn('Unauthorized: MFA verification required');
+      throw new AppError(
+        'UnauthorizedError',
+        'MFA verification required',
+      );
+    }
+
+    this.ctx.set('userId', decodedToken.userId);
+    this.ctx.set('role', decodedToken.role);
+    this.ctx.set('orgId', decodedToken.orgId);
+    this.ctx.set('email', decodedToken.email);
     return true;
   }
 }

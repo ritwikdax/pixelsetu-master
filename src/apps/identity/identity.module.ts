@@ -11,6 +11,7 @@ import { MembershipRepository } from './membership.repo';
 import { UserLoginService } from './login/login.service';
 import { EmailModule } from '@/modules/common/email';
 import { CookieService } from './cookie.service';
+import { TotpService } from './totp.service';
 
 @Module({
   imports: [CommonModule, EmailModule],
@@ -24,6 +25,7 @@ import { CookieService } from './cookie.service';
     MembershipRepository,
     UserLoginService,
     CookieService,
+    TotpService,
   ],
 })
 export class IdentityModule {}

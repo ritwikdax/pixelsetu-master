@@ -42,7 +42,14 @@ export interface GoogleTokenClaims {
 
 export interface Token {
   type: 'human' | 'machine';
+  email: string;
   userId: string;
   orgId: string;
   role: ApplicationRole;
+  mfaPending?: boolean;
+}
+
+export interface LoginResult {
+  token: string;
+  requiresMfa: boolean;
 }

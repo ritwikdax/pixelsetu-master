@@ -67,4 +67,10 @@ export class UserRepository {
       .collection<User>(COLLECTIONS.USERS)
       .updateOne({ id: userId }, { $pull: { applicationPool: appId } });
   }
+
+  async updateById(userId: string, update: Partial<User>) {
+    return await this.db
+      .collection<User>(COLLECTIONS.USERS)
+      .updateOne({ id: userId }, { $set: update });
+  }
 }

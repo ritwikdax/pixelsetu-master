@@ -45,7 +45,7 @@ export const MembershipSchema = z.object({
   orgId: z.string(),
 });
 
-const User = z.object({
+const UserSchema = z.object({
   email: z.email(),
   firstName: z.string(),
   lastName: z.string(),
@@ -54,6 +54,9 @@ const User = z.object({
   isVerified: z.boolean(),
   isActive: z.boolean(),
   applicationPool: z.array(z.string()),
+  totpSecret: z.string().nullable().optional(),
+  mfaEnabled: z.boolean().optional(),
+  loginWithMfaEnabled: z.boolean().default(false).optional(),
 });
 
 export const InviteUserToOrgSchema = z.object({
@@ -65,6 +68,6 @@ export type FeaturedImage = z.infer<typeof FeaturedImageSchema> &
   EntityMetadata;
 export type Org = z.infer<typeof OrganizationSchema> & EntityMetadata;
 export type Membership = z.infer<typeof MembershipSchema> & EntityMetadata;
-export type User = z.infer<typeof User> & EntityMetadata;
+export type User = z.infer<typeof UserSchema> & EntityMetadata;
 export type OrgRole = z.infer<typeof OrganizationRoles>;
 export type InviteUserToOrg = z.infer<typeof InviteUserToOrgSchema>;

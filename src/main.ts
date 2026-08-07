@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
-import { AppLogger, GlobalExceptionFilter, LoggingInterceptor } from './modules/common';
+import { AppLogger, GlobalExceptionFilter } from './modules/common';
 import helmet from 'helmet';
 
 async function bootstrap() {
-  const logger = new AppLogger('Bootstrap');
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  app.useLogger(new AppLogger('Nest'));
+  app.useLogger(app.get(Logger));
+  const logger = new AppLogger('Bootstrap');
   app.use(helmet());
   const isProduction = process.env.NODE_ENV === 'production';
   const pixelsetuOrigin = /^https?:\/\/([a-zA-Z0-9-]+\.)*pixelsetu\.com$/;
@@ -21,7 +22,6 @@ async function bootstrap() {
   });
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor());
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

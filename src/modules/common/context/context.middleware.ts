@@ -12,9 +12,15 @@ export class ContextMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction) {
+    const requestId =
+      (req.headers['x-request-id'] as string) ||
+      (typeof req.id === 'string' ? req.id : undefined) ||
+      this.utilsService.uuid();
+
+    req.id = requestId;
+
     const store = new ContextStore({
-      requestId:
-        (req.headers['x-request-id'] as string) || this.utilsService.uuid(),
+      requestId,
       method: req.method,
       requestTimestamp: new Date().toISOString(),
       endpoint: req.originalUrl,

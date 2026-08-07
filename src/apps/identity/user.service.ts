@@ -24,6 +24,10 @@ export class UserManagementService {
     return await this.userRepo.findByEmail(email);
   }
 
+  async getEmailForMfaLogin() {
+    return this.context.getOrThrow('email');
+  }
+
   async getCurrentUserDetails() {
     const userId = this.context.getOrThrow('userId');
     const user = await this.userRepo.findById(userId);
@@ -63,6 +67,8 @@ export class UserManagementService {
         avatarUrl: userData.avatarUrl,
         isActive: true,
         applicationPool: this.DEFAULT_APPLICATION_POOL,
+        mfaEnabled: false,
+        loginWithMfaEnabled: false,
         createdAt: now,
         updatedAt: now,
       },
@@ -137,6 +143,7 @@ export class UserManagementService {
       type: 'human',
       userId: userId,
       orgId: orgId,
+      email: this.context.getOrThrow('email'),
       role: isMember.role,
     }
 

@@ -26,7 +26,14 @@ export class LoggingInterceptor implements NestInterceptor {
       finalize(() => {
         const durationMs = Date.now() - startedAt;
         const statusCode = response.statusCode;
-        this.logger.log(`${method} ${path} ${statusCode} ${durationMs}ms`);
+
+        this.logger.log({
+          message: 'HTTP request completed',
+          method,
+          path,
+          statusCode,
+          durationMs,
+        });
       }),
     );
   }

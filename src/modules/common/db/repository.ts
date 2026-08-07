@@ -11,13 +11,14 @@ import {
 } from './interface';
 import { ListQueryParser } from './dbquery.parser';
 import { AppLogger } from '../logging/app.logger';
+import type { Filter, FindOneOptions } from 'mongodb';
 
 @Injectable()
 export class Repository<T extends EntityMetadata> {
   private readonly DEFAULT_LIMIT = 100;
   private readonly logger = new AppLogger(Repository.name);
 
-  constructor(@InjectDb() private readonly db: Db) {}
+  constructor(@InjectDb() private readonly db: Db) { }
 
   async query(
     collectionName: string,
@@ -85,17 +86,10 @@ export class Repository<T extends EntityMetadata> {
 
   async findAll(
     collectionName: string,
-    standardFilter?: StandardFilter,
+    filter: Filter<any>,
   ): Promise<T[]> {
     this.logger.debug(`findAll collection=${collectionName}`);
     try {
-      const filter = standardFilter?.nextToken
-        ? {
-            id: {
-              $gt: standardFilter.nextToken,
-            },
-          }
-        : {};
       const collection = this.db.collection(collectionName);
       const data = (await collection
         .find(filter)
@@ -112,19 +106,11 @@ export class Repository<T extends EntityMetadata> {
     }
   }
 
-  async findById(collectionName: string, id: string): Promise<T | null> {
-    this.logger.debug(`findById collection=${collectionName} id=${id}`);
-    try {
-      const collection = this.db.collection(collectionName);
-      const data = await collection.findOne({ id });
-      return data as T | null;
-    } catch (err) {
-      this.logger.error(
-        `findById failed collection=${collectionName} id=${id}`,
-        err instanceof Error ? err.stack : String(err),
-      );
-      throw err;
-    }
+  async findOne(collectionName: string, filter: Filter<any>, options?: FindOneOptions): Promise<T | null> {
+    this.logger.debug(`findOne collection=${collectionName}`);
+    const collection = this.db.collection(collectionName);
+    const data = await collection.findOne(filter, options);
+    return data as T | null;
   }
 
   async create(collectionName: string, entity: T): Promise<InsertOneResult<T>> {

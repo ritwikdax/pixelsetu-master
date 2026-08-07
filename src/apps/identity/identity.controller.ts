@@ -8,8 +8,11 @@ import { InviteUserToOrgSchema, MembershipSchema, Org, OrganizationSchema } from
 import { type Response } from 'express';
 import type { InviteUserToOrg } from './schema';
 import { COOKIE_NAME } from '@/modules/const.global';
-import { AllowAnnonymous } from '@/modules';
+import { AllowAnnonymous, AllowMfaPending } from '@/modules';
 import { CookieService } from './cookie.service';
+import { TotpService } from './totp.service';
+import { UserLoginService } from './login/login.service';
+import z from 'zod';
 
 @UseGuards(AuthGuard, RoleGuard)
 @Controller('identity')
@@ -18,6 +21,8 @@ export class IdentityController {
     private readonly orgService: OrgService,
     private readonly userService: UserManagementService,
     private readonly cookieService: CookieService,
+    private readonly totpService: TotpService,
+    private readonly userLoginService: UserLoginService,
   ) { }
 
   @Get('healthcheck')
@@ -25,6 +30,80 @@ export class IdentityController {
     return 'OK';
   }
 
+  @Role('owner')
+  @Post('me/mfa/setup')
+  async setupMfa() {
+    return {
+      success: true,
+      message: 'MFA setup successfully',
+      data: await this.totpService.setup(),
+    }
+  }
+
+  @Role('owner')
+  @Delete('me/mfa')
+  async deleteMfaSetup(){
+    return {
+      success: true,
+      message: 'MFA setup deleted successfully',
+      data: await this.totpService.deleteTotpSetup(),
+    }
+  }
+
+  @Role('owner')
+  @Patch('me/mfa/login/toggle')
+  async toggleMfaLoginSetup(){
+    return {
+      success: true,
+      message: 'MFA login setup toggled successfully',
+      data: await this.totpService.toggleMfaLoginSetup(),
+    }
+  }
+
+  @ValidateSchema({
+    body: z.object({ code: z.string().length(6) }),
+  })
+  @Post('me/mfa/verify')
+  async verifyMfa(@Body() body: { code: string }) {
+    return {
+      success: true,
+      message: 'MFA verified successfully',
+      data: await this.totpService.verifySetup(body.code),
+    }
+  }
+
+  @AllowMfaPending()
+  @Get('me/mfa/login')
+  async getMfaLoginStatus() {
+    return {
+      success: true,
+      message: 'MFA login status retrieved successfully',
+      data: {
+        mfaPending: true,
+        email: await this.userService.getEmailForMfaLogin(),
+      },
+    };
+  }
+
+  @ValidateSchema({
+    body: z.object({ code: z.string().length(6) }),
+  })
+  @AllowMfaPending()
+  @Post('me/mfa/login')
+  async verifyLoginMfa(
+    @Body() body: { code: string },
+    @Res() res: Response,
+  ) {
+    await this.totpService.verifyLogin(body.code);
+    const token = this.userLoginService.completeMfaLogin();
+    await this.cookieService.setLoginCookie(res, token);
+    return res.status(200).json({
+      success: true,
+      message: 'MFA verified for login successfully',
+    });
+  }
+
+  @AllowMfaPending()
   @Get('me')
   async getIdentityContext() {
     return {
@@ -68,6 +147,7 @@ export class IdentityController {
     return res.status(200).json({ success: true, message: 'User left the organization successfully' });
   }
 
+  @AllowMfaPending()
   @Get('org')
   async getOrg() {
     return {

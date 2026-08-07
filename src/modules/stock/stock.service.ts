@@ -6,7 +6,7 @@ export class StockService {
   constructor(private readonly repo: Repository<any>) {}
 
   async getStockData() {
-    return await this.repo.findAll('stock');
+    return await this.repo.findAll('stock', {});
   }
 
   async createLot(lotData: any) {

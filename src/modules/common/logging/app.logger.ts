@@ -1,47 +1,117 @@
-import { ConsoleLogger } from '@nestjs/common';
-import { requestContextAls } from '../context/context.als';
+import { LoggerService } from '@nestjs/common';
+import type { Logger as PinoLogger } from 'pino';
+import { rootLogger } from './pino.config';
+
+type LogLevel = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
 /**
- * Nest ConsoleLogger that prefixes messages with requestId when ALS context exists.
+ * Pino-backed logger compatible with Nest LoggerService.
  * Safe to construct without DI: `private readonly logger = new AppLogger(MyService.name)`.
+ * Automatically enriches logs with request context from ALS via the root pino mixin.
  */
-export class AppLogger extends ConsoleLogger {
-  constructor(context: string) {
-    super(context);
+export class AppLogger implements LoggerService {
+  private readonly pino: PinoLogger;
+
+  constructor(private readonly context: string) {
+    this.pino = rootLogger.child({ context });
   }
 
-  private withRequestId(message: unknown): unknown {
-    if (typeof message !== 'string') {
-      return message;
+  log(message: unknown, ...optionalParams: unknown[]) {
+    this.write('info', message, optionalParams);
+  }
+
+  error(message: unknown, ...optionalParams: unknown[]) {
+    this.write('error', message, optionalParams);
+  }
+
+  warn(message: unknown, ...optionalParams: unknown[]) {
+    this.write('warn', message, optionalParams);
+  }
+
+  debug(message: unknown, ...optionalParams: unknown[]) {
+    this.write('debug', message, optionalParams);
+  }
+
+  verbose(message: unknown, ...optionalParams: unknown[]) {
+    this.write('trace', message, optionalParams);
+  }
+
+  fatal(message: unknown, ...optionalParams: unknown[]) {
+    this.write('fatal', message, optionalParams);
+  }
+
+  private write(
+    level: LogLevel,
+    message: unknown,
+    optionalParams: unknown[],
+  ): void {
+    const payload = this.buildPayload(message, optionalParams, level);
+    const logMessage =
+      typeof payload.message === 'string' ? payload.message : undefined;
+
+    if (payload.error instanceof Error) {
+      const { error, message: msg, ...rest } = payload;
+      this.pino[level]({ ...rest, error }, msg as string | undefined);
+      return;
     }
-    const requestId = requestContextAls.getStore()?.get('requestId');
-    if (!requestId) {
-      return message;
+
+    if (logMessage !== undefined) {
+      const { message: msg, ...rest } = payload;
+      this.pino[level](rest, msg as string);
+      return;
     }
-    return `[requestId=${requestId}] ${message}`;
+
+    this.pino[level](payload);
   }
 
-  override log(message: unknown, ...optionalParams: unknown[]) {
-    super.log(this.withRequestId(message), ...optionalParams);
-  }
+  private buildPayload(
+    message: unknown,
+    optionalParams: unknown[],
+    level: LogLevel,
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
 
-  override error(message: unknown, ...optionalParams: unknown[]) {
-    super.error(this.withRequestId(message), ...optionalParams);
-  }
+    if (typeof message === 'string') {
+      payload.message = message;
+    } else if (message instanceof Error) {
+      payload.error = message;
+      payload.message = message.message;
+    } else if (message && typeof message === 'object') {
+      Object.assign(payload, message);
+    } else if (message !== undefined) {
+      payload.message = String(message);
+    }
 
-  override warn(message: unknown, ...optionalParams: unknown[]) {
-    super.warn(this.withRequestId(message), ...optionalParams);
-  }
+    for (const param of optionalParams) {
+      if (param === undefined || param === null) {
+        continue;
+      }
 
-  override debug(message: unknown, ...optionalParams: unknown[]) {
-    super.debug?.(this.withRequestId(message), ...optionalParams);
-  }
+      if (param instanceof Error) {
+        payload.error = param;
+        if (!payload.message) {
+          payload.message = param.message;
+        }
+        continue;
+      }
 
-  override verbose(message: unknown, ...optionalParams: unknown[]) {
-    super.verbose?.(this.withRequestId(message), ...optionalParams);
-  }
+      if (typeof param === 'string') {
+        if (level === 'error' && param.includes('\n') && !payload.stack) {
+          payload.stack = param;
+          continue;
+        }
 
-  override fatal(message: unknown, ...optionalParams: unknown[]) {
-    super.fatal?.(this.withRequestId(message), ...optionalParams);
+        if (param !== this.context) {
+          payload.detail = param;
+        }
+        continue;
+      }
+
+      if (typeof param === 'object') {
+        Object.assign(payload, param);
+      }
+    }
+
+    return payload;
   }
 }

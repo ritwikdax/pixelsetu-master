@@ -7,7 +7,7 @@ export class JwtService {
   private readonly DOMAIN = 'pixelsetu.com';
   private readonly DEFAULT_OPTIONS: jwt.SignOptions = {
     algorithm: 'HS256',
-    expiresIn: '7d',
+    expiresIn: '30d',
   };
 
   constructor(private readonly config: AppConfigService) {}

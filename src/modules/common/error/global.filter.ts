@@ -50,19 +50,29 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       (request.headers['x-context-id'] as string | undefined) ||
       (request.headers['x-request-id'] as string | undefined);
 
-    const logMessage = `${request.method} ${request.url} status=${status}${
-      requestId ? ` requestId=${requestId}` : ''
-    }`;
+    const logPayload = {
+      message: 'Request failed',
+      method: request.method,
+      path: request.url,
+      status,
+      ...(requestId ? { requestId } : {}),
+    };
 
     if (exception instanceof AppError) {
-      this.logger.warn(
-        `${logMessage} — ${exception.message}: ${exception.errorDetails}`,
-      );
+      this.logger.warn({
+        ...logPayload,
+        errorMessage: exception.message,
+        errorDetails: exception.errorDetails,
+        code: exception.code,
+      });
     } else {
-      this.logger.error(
-        logMessage,
-        exception instanceof Error ? exception.stack : undefined,
-      );
+      this.logger.error({
+        ...logPayload,
+        error:
+          exception instanceof Error
+            ? exception
+            : { message: String(exception) },
+      });
     }
 
     response.status(status).json({
