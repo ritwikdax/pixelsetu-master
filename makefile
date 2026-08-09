@@ -5,7 +5,7 @@ DEPLOY_DIR := deploy
 APP_PORT := 3000
 
 ARCHIVE := $(OUTPUT_DIR)/$(APP_NAME).tar.gz
-ENTRYPOINT := $(DEPLOY_DIR)/$(BUILD_DIR)/src/main.js
+ENTRYPOINT := $(DEPLOY_DIR)/$(BUILD_DIR)/main.js
 NGINX_SITES_AVAILABLE := /etc/nginx/sites-available
 NGINX_SITES_ENABLED := /etc/nginx/sites-enabled
 NGINX_SITE := $(NGINX_SITES_AVAILABLE)/$(APP_NAME)
