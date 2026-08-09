@@ -14,6 +14,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new AppLogger(GlobalExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
+    console.log('exception', exception);
     const ctx = host.switchToHttp();
 
     const request = ctx.getRequest<Request>();

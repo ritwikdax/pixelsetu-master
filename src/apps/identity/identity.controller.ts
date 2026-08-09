@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@/modules/auth/auth.guard';
 import { OrgService } from './org.service';
 import { UserManagementService } from './user.service';
@@ -25,6 +25,17 @@ export class IdentityController {
     private readonly userLoginService: UserLoginService,
   ) { }
 
+  @AllowAnnonymous()
+  @Get('business/:namespace')
+  async getBusinessDetails(@Param('namespace') namespace: string){
+    return {
+      success: true,
+      message: 'Business details retrieved successfully',
+      data: await this.orgService.getBusinessDetails(namespace),
+    }
+  }
+
+
   @Get('healthcheck')
   async healthcheck() {
     return 'OK';
@@ -35,7 +46,7 @@ export class IdentityController {
   async setupMfa() {
     return {
       success: true,
-      message: 'MFA setup successfully',
+      message: 'MFA setup response sent successfully',
       data: await this.totpService.setup(),
     }
   }
@@ -60,6 +71,7 @@ export class IdentityController {
     }
   }
 
+  @Role('owner')
   @ValidateSchema({
     body: z.object({ code: z.string().length(6) }),
   })
@@ -72,6 +84,7 @@ export class IdentityController {
     }
   }
 
+  @Role('owner')
   @AllowMfaPending()
   @Get('me/mfa/login')
   async getMfaLoginStatus() {
@@ -85,6 +98,7 @@ export class IdentityController {
     };
   }
 
+  @Role('owner')
   @ValidateSchema({
     body: z.object({ code: z.string().length(6) }),
   })

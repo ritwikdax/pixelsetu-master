@@ -1,12 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { Db } from 'mongodb';
 import { InjectDb } from '@common';
-import { Org, OrgRole } from './schema';
+import { Org } from './schema';
 import { COLLECTIONS } from '@/modules/const.global';
 
 @Injectable()
 export class OrgRepository {
   constructor(@InjectDb() private readonly db: Db) {}
+
+  async getOrgDetailsPublic(namespace: string){
+    return await this.db.collection<Org>(COLLECTIONS.ORGS).findOne(
+      { namespace },
+      {
+        projection: {
+          _id: 0,
+          id: 0,
+          licenses: 0,
+          ownerId: 0,
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      },
+    );
+  }
 
   async getOrgDetails(orgId: string) {
     return await this.db

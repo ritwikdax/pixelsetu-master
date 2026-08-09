@@ -24,11 +24,7 @@ export class StudioController {
 
     constructor(private readonly studioService: StudioService) { }
 
-    @Get()
-    getStudio() {
-        return 'Studio';
-    }
-
+    //==================== PROJECTS ====================
     @ValidateSchema({
         query: ListQuerySchema,
     })
@@ -41,6 +37,7 @@ export class StudioController {
             next: result.next,
         };
     }
+
 
     @Role('editor')
     @ValidateSchema({
@@ -67,6 +64,33 @@ export class StudioController {
         };
     }
 
+    @Role('editor')
+    @ValidateSchema({
+        params: z.uuidv7(),
+        body: ProjectSchema,
+    })
+    @Patch('projects/:projectId')
+    async updateProject(@Param('projectId') projectId: string, @Body() project: Project) {
+        //return { success: false, message: 'Project not found' };
+        return {
+            success: true,
+            data: await this.studioService.updateProject(projectId, project),
+            message: 'Project updated successfully',
+        };
+    }
+
+    @Role('admin')
+    @ValidateSchema({
+        params: z.uuidv7(),
+    })
+    @Delete('projects/:projectId')
+    async deleteProject(@Param('projectId') projectId: string) {
+        await this.studioService.deleteProjectById(projectId);
+        return { success: true, message: 'Project deleted successfully' };
+    }
+    
+
+    //==================== ALBUMS ====================
     @ValidateSchema({
         query: ListQuerySchema,
     })
@@ -79,6 +103,22 @@ export class StudioController {
             next: result.next,
         };
     }
+
+
+    @ValidateSchema({
+        params: z.uuidv7(),
+    })
+    @Get('albums/projects/:projectId')
+    async listAlbumsByProjectId(@Param('projectId') projectId: string) {
+        const result = await this.studioService.getAlbumByProjectId(projectId);
+        return {
+            success: true,
+            data: result,
+            message: 'Albums for project fetched successfully',
+        };
+    }
+
+
 
     @ValidateSchema({
         params: z.uuidv7(),
@@ -141,6 +181,21 @@ export class StudioController {
             message: 'Album deleted successfully',
         };
     }
+
+
+
+    //==================== PAYMENTS ====================
+    @ValidateSchema({
+        query: ListQuerySchema,
+    })
+    @Get('payments')
+    async listPayments(@Query() query: ListQuery) {
+        const result = await this.studioService.listPayments(query);
+        return { success: true, data: result.data, next: result.next };
+    }
+
+
+
 
     @ValidateSchema({
         params: z.uuidv7(),

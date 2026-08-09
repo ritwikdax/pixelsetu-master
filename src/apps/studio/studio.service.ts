@@ -4,10 +4,14 @@ import { Project, CreateAlbum, UpdateAlbum, CreatePayment, UpdatePayment } from 
 import { COLLECTION_NAME } from "./const";
 import { Injectable } from "@nestjs/common";
 import { uuidv7 } from "uuidv7";
+import { StudioRepository } from "./studio.repo";
 
 @Injectable()
 export class StudioService {
-  constructor(private readonly repository: Repository<any>, private readonly context: ContextService) { }
+  constructor(
+    private readonly repository: Repository<any>,
+    private readonly context: ContextService,
+    private readonly studioRepository: StudioRepository) { }
 
   async listProjects(query: ListQuery) {
     const orgId = this.context.getOrThrow('orgId');
@@ -28,8 +32,7 @@ export class StudioService {
   }
 
   async updateProject(id: string, project: Project) {
-    await this.getProjectById(id);
-    return this.repository.update(COLLECTION_NAME.PROJECT, id, project);
+    return await this.studioRepository.updateProject(id, project);
   }
 
   async getProjectById(id: string) {
@@ -57,11 +60,27 @@ export class StudioService {
     return project as Project;
   }
 
+  async deleteProjectById(projectId: string) {
+    return await this.studioRepository.deleteProjectById(projectId);
+  }
+
+
+
+
+  //==================== ALBUMS ====================
+
   async listAlbums(query: ListQuery) {
     const orgId = this.context.getOrThrow('orgId');
     return this.repository.query(COLLECTION_NAME.ALBUM, query, {
       baseFilter: { orgId },
       searchFields: ['name', 'projectName', 'projectId'],
+    });
+  }
+
+  async getAlbumByProjectId(projectId: string) {
+    return await this.repository.findAll(COLLECTION_NAME.ALBUM, {
+      projectId,
+      orgId: this.context.getOrThrow('orgId'),
     });
   }
 
@@ -142,5 +161,13 @@ export class StudioService {
   async deletePayment(projectId: string, id: string) {
     await this.getPaymentById(projectId, id);
     return this.repository.delete(COLLECTION_NAME.PAYMENT, id);
+  }
+
+  async listPayments(query: ListQuery) {
+    const orgId = this.context.getOrThrow('orgId');
+    return this.repository.query(COLLECTION_NAME.PAYMENT, query, {
+      baseFilter: { orgId },
+      searchFields: ['name', 'projectName', 'projectId'],
+    });
   }
 }

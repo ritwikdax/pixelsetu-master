@@ -21,6 +21,12 @@ export class OrgService {
     private readonly jwtService: JwtService,
   ) { }
 
+  async getBusinessDetails(namespace: string) {
+    return await this.orgRepository.getOrgDetailsPublic(namespace);
+  }
+
+
+
   async getOrgDetails() {
     const orgId = this.context.getOrThrow('orgId');
     return await this.orgRepository.getOrgDetails(orgId);
