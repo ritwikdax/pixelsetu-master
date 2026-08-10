@@ -8,7 +8,6 @@ on:
 env:
   APP_NAME: pixelsetu-master
   NODE_VERSION: "24"
-  NODE_ENV: production
   SSH_HOST: server.pixelsetu.com
   SSH_PORT: "22"
   DEPLOY_PATH: /opt/pixelsetu-master
@@ -76,7 +75,7 @@ jobs:
           ssh deploy-target env \
             REMOTE_PATH="${{ env.DEPLOY_PATH }}" \
             APP_NAME="${{ env.APP_NAME }}" \
-            NODE_ENV="${{ env.NODE_ENV }}" \
+            NODE_ENV="production" \
             MONGODB_URI="$MONGODB_URI" \
             MONGO_DB_NAME="$MONGO_DB_NAME" \
             GCP_SERVICE_ACCOUNT_B64="$GCP_SERVICE_ACCOUNT_B64" \
