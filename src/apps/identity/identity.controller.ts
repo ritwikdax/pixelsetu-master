@@ -35,12 +35,6 @@ export class IdentityController {
     }
   }
 
-
-  @Get('healthcheck')
-  async healthcheck() {
-    return 'OK';
-  }
-
   @Role('owner')
   @Post('me/mfa/setup')
   async setupMfa() {
@@ -198,6 +192,19 @@ export class IdentityController {
   @Get('org/invite/accept')
   async acceptInvite(@Query('token') token: string){
     return await this.orgService.acceptInvite(token);
+  }
+
+  @Role('owner')
+  @Delete('org/members/:memberId')
+  @ValidateSchema({
+    params: z.uuidv7(),
+  })
+  async removeOrgMember(@Param('memberId') memberId: string){
+    return {
+      success: true,
+      message: 'Organization member removed successfully',
+      data: await this.orgService.removeOrgMember(memberId),
+    };
   }
 
   @ValidateSchema({

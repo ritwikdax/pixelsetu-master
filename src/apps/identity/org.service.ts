@@ -134,4 +134,18 @@ export class OrgService {
     return `<div>User invited to organization successfully</div>`;
   }
 
+
+  async removeOrgMember(memberId: string) {
+    const orgId = this.context.getOrThrow('orgId');
+    const membership = await this.membershipRepo.checkMembership(orgId, memberId);
+    if(!membership) {
+      throw new AppError("NotFoundError", "Membership not found");
+    }
+    if(membership.role === 'owner') {
+      throw new AppError("Unsupported", "Owner cannot be removed from the organization");
+    }
+
+    return await this.membershipRepo.deleteMembership(orgId, memberId);
+  }
+
 }
