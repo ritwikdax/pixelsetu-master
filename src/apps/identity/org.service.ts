@@ -8,6 +8,7 @@ import { MembershipRepository } from './membership.repo';
 import { JwtService } from '@/modules';
 import { AcceptInviteTokenPayload, OrgMember } from './identity.interface';
 import { uuidv7 } from 'uuidv7';
+import { AppConfigService } from '@/modules/common/config/config.service';
 
 @Injectable()
 export class OrgService {
@@ -19,6 +20,7 @@ export class OrgService {
     private readonly membershipRepo: MembershipRepository,
     private readonly context: ContextService,
     private readonly jwtService: JwtService,
+    private readonly configService: AppConfigService,
   ) { }
 
   async getBusinessDetails(namespace: string) {
@@ -81,7 +83,7 @@ export class OrgService {
       throw new AppError("NotFoundError", "Organization not found");
     }
 
-    const baseUrl = process.env.NODE_ENV === 'production' ? 'https://pixelsetu.com' : 'http://localhost:3000';
+    const baseUrl = this.configService.getConfig('DEPLOY_DOMAIN');
 
     const inviteToken = this.jwtService.sign({
       orgId,

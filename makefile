@@ -6,7 +6,7 @@ APP_PORT := 3000
 
 REMOTE_HOST := pixelsetu-deploy
 REMOTE_PATH := /opt/pixelsetu-master
-ENV_FILE := .env
+ENV_FILE := .env.prod
 
 ARCHIVE := $(OUTPUT_DIR)/$(APP_NAME).tar.gz
 ENTRYPOINT := $(DEPLOY_DIR)/dist/main.js
