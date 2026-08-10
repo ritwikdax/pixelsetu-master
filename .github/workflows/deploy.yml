@@ -1,0 +1,107 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APP_NAME: pixelsetu-master
+  NODE_VERSION: "24"
+  NODE_ENV: production
+  SSH_HOST: server.pixelsetu.com
+  SSH_PORT: "22"
+  DEPLOY_PATH: /opt/pixelsetu-master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and package
+        run: make package
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          cat >> ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${{ env.SSH_HOST }}
+            User ${SSH_USER}
+            Port ${{ env.SSH_PORT }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+          EOF
+
+          chmod 600 ~/.ssh/config
+
+      - name: Copy build artifact to server
+        run: |
+          ssh deploy-target "mkdir -p ${{ env.DEPLOY_PATH }}/releases"
+          scp releases/${{ env.APP_NAME }}.tar.gz deploy-target:${{ env.DEPLOY_PATH }}/releases/
+
+      - name: Deploy application
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}
+          GCP_SERVICE_ACCOUNT_B64: ${{ secrets.GCP_SERVICE_ACCOUNT_B64 }}
+          REDIS_URI: ${{ secrets.REDIS_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
+          MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
+          MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
+        run: |
+          ssh deploy-target env \
+            REMOTE_PATH="${{ env.DEPLOY_PATH }}" \
+            APP_NAME="${{ env.APP_NAME }}" \
+            NODE_ENV="${{ env.NODE_ENV }}" \
+            MONGODB_URI="$MONGODB_URI" \
+            MONGO_DB_NAME="$MONGO_DB_NAME" \
+            GCP_SERVICE_ACCOUNT_B64="$GCP_SERVICE_ACCOUNT_B64" \
+            REDIS_URI="$REDIS_URI" \
+            JWT_SECRET="$JWT_SECRET" \
+            GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+            GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+            GOOGLE_REDIRECT_URI="$GOOGLE_REDIRECT_URI" \
+            MAILGUN_API_KEY="$MAILGUN_API_KEY" \
+            MAILGUN_DOMAIN="$MAILGUN_DOMAIN" \
+            bash -s <<'REMOTE_SCRIPT'
+          set -euo pipefail
+
+          cd "$REMOTE_PATH"
+          mkdir -p releases deploy
+
+          rm -rf deploy
+          mkdir -p deploy
+          tar -xzf "releases/${APP_NAME}.tar.gz" -C deploy
+          rm -f "releases/${APP_NAME}.tar.gz"
+
+          pm2 delete "$APP_NAME" 2>/dev/null || true
+          pm2 start "deploy/dist/main.js" --name "$APP_NAME" --cwd "$REMOTE_PATH"
+          pm2 save
+
+          echo ""
+          echo "$APP_NAME is running."
+          REMOTE_SCRIPT
