@@ -4,13 +4,17 @@ OUTPUT_DIR := releases
 DEPLOY_DIR := deploy
 APP_PORT := 3000
 
+REMOTE_HOST := pixelsetu-deploy
+REMOTE_PATH := /opt/pixelsetu-master
+ENV_FILE := .env
+
 ARCHIVE := $(OUTPUT_DIR)/$(APP_NAME).tar.gz
-ENTRYPOINT := $(DEPLOY_DIR)/$(BUILD_DIR)/main.js
+ENTRYPOINT := $(DEPLOY_DIR)/dist/main.js
 NGINX_SITES_AVAILABLE := /etc/nginx/sites-available
 NGINX_SITES_ENABLED := /etc/nginx/sites-enabled
 NGINX_SITE := $(NGINX_SITES_AVAILABLE)/$(APP_NAME)
 
-.PHONY: build package run deploy restart stop logs clean nginx-install nginx-configure nginx-setup
+.PHONY: build package run deploy deploy-local restart stop logs clean nginx-install nginx-configure nginx-setup
 
 # ----------------------------------------
 # Build
@@ -26,7 +30,7 @@ build:
 
 package: build
 	mkdir -p $(OUTPUT_DIR)
-	tar -czf $(ARCHIVE) $(BUILD_DIR)
+	tar -czf $(ARCHIVE) $(BUILD_DIR) package.json package-lock.json
 	@echo ""
 	@echo "Build packaged:"
 	@echo "  $(ARCHIVE)"
@@ -34,33 +38,45 @@ package: build
 
 
 # ----------------------------------------
-# Extract and start application with PM2
+# Extract and start application with PM2 (local)
 # ----------------------------------------
 
 run:
-	@echo "Deploying $(APP_NAME)..."
+	@echo "Starting $(APP_NAME) locally..."
+	@test -f $(ENV_FILE) || (echo "Missing $(ENV_FILE)" && exit 1)
 	rm -rf $(DEPLOY_DIR)
 	mkdir -p $(DEPLOY_DIR)
 
 	tar -xzf $(ARCHIVE) -C $(DEPLOY_DIR)
 
-	pm2 delete $(APP_NAME) 2>/dev/null || true
-	pm2 start $(ENTRYPOINT) --name $(APP_NAME)
-
+	cd $(DEPLOY_DIR) && npm ci --omit=dev && \
+	set -a && . ../$(ENV_FILE) && set +a && \
+	export NODE_ENV=$${NODE_ENV:-production} && \
+	pm2 delete $(APP_NAME) 2>/dev/null || true && \
+	pm2 start dist/main.js --name $(APP_NAME) --cwd $(DEPLOY_DIR) --update-env && \
 	pm2 save
 
 	@echo ""
-	@echo "$(APP_NAME) is running."
+	@echo "$(APP_NAME) is running locally."
 	@echo ""
 
 
 # ----------------------------------------
-# Build + Package + Run
+# Deploy to VPS from local machine
 # ----------------------------------------
 
-deploy: package run
+deploy: package
+	@APP_NAME=$(APP_NAME) REMOTE_HOST=$(REMOTE_HOST) REMOTE_PATH=$(REMOTE_PATH) ENV_FILE=$(ENV_FILE) \
+		./scripts/deploy-remote.sh $(ARCHIVE)
+
+
+# ----------------------------------------
+# Build + Package + Run (local)
+# ----------------------------------------
+
+deploy-local: package run
 	@echo ""
-	@echo "Deployment completed successfully."
+	@echo "Local deployment completed successfully."
 	@echo ""
 
 
@@ -69,7 +85,10 @@ deploy: package run
 # ----------------------------------------
 
 restart:
-	pm2 restart $(APP_NAME)
+	@test -f $(ENV_FILE) || (echo "Missing $(ENV_FILE)" && exit 1)
+	set -a && . ./$(ENV_FILE) && set +a && \
+	export NODE_ENV=$${NODE_ENV:-production} && \
+	pm2 restart $(APP_NAME) --update-env
 
 
 # ----------------------------------------
