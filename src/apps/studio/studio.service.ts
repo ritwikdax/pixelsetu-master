@@ -1,17 +1,24 @@
-import { ContextService, ListQuery, Repository } from "@/modules/common";
-import { AppError } from "@/modules/common/error/app.error";
-import { Project, CreateAlbum, UpdateAlbum, CreatePayment, UpdatePayment } from "./schema";
-import { COLLECTION_NAME } from "./const";
-import { Injectable } from "@nestjs/common";
-import { uuidv7 } from "uuidv7";
-import { StudioRepository } from "./studio.repo";
+import { ContextService, ListQuery, Repository } from '@/modules/common';
+import { AppError } from '@/modules/common/error/app.error';
+import {
+  Project,
+  CreateAlbum,
+  UpdateAlbum,
+  CreatePayment,
+  UpdatePayment,
+} from './schema';
+import { COLLECTION_NAME } from './const';
+import { Injectable } from '@nestjs/common';
+import { uuidv7 } from 'uuidv7';
+import { StudioRepository } from './studio.repo';
 
 @Injectable()
 export class StudioService {
   constructor(
     private readonly repository: Repository<any>,
     private readonly context: ContextService,
-    private readonly studioRepository: StudioRepository) { }
+    private readonly studioRepository: StudioRepository,
+  ) {}
 
   async listProjects(query: ListQuery) {
     const orgId = this.context.getOrThrow('orgId');
@@ -26,8 +33,8 @@ export class StudioService {
     const now = new Date();
     const newProject = {
       ...project,
-      orgId
-    }
+      orgId,
+    };
     return this.repository.create(COLLECTION_NAME.PROJECT, newProject);
   }
 
@@ -36,15 +43,19 @@ export class StudioService {
   }
 
   async getProjectById(id: string) {
-    return await this.repository.findOne(COLLECTION_NAME.PROJECT, {
-      id: id,
-      orgId: this.context.getOrThrow('orgId'),
-    }, {
-      projection: {
-        _id: 0,
-        orgId: 0,
-      }
-    })
+    return await this.repository.findOne(
+      COLLECTION_NAME.PROJECT,
+      {
+        id: id,
+        orgId: this.context.getOrThrow('orgId'),
+      },
+      {
+        projection: {
+          _id: 0,
+          orgId: 0,
+        },
+      },
+    );
   }
 
   private async getProjectOrThrow(projectId: string): Promise<Project> {
@@ -64,9 +75,6 @@ export class StudioService {
     return await this.studioRepository.deleteProjectById(projectId);
   }
 
-
-
-
   //==================== ALBUMS ====================
 
   async listAlbums(query: ListQuery) {
@@ -84,10 +92,9 @@ export class StudioService {
     });
   }
 
-  async getAlbumById(projectId: string, id: string) {
+  async getAlbumById(id: string) {
     const album = await this.repository.findOne(COLLECTION_NAME.ALBUM, {
       id,
-      projectId,
       orgId: this.context.getOrThrow('orgId'),
     });
 
@@ -111,12 +118,12 @@ export class StudioService {
   }
 
   async updateAlbum(projectId: string, id: string, album: UpdateAlbum) {
-    await this.getAlbumById(projectId, id);
+    await this.getAlbumById(id);
     await this.repository.update(COLLECTION_NAME.ALBUM, id, album);
   }
 
   async deleteAlbum(projectId: string, id: string) {
-    await this.getAlbumById(projectId, id);
+    await this.getAlbumById(id);
     return this.repository.delete(COLLECTION_NAME.ALBUM, id);
   }
 
