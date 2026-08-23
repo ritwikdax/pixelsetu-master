@@ -52,8 +52,10 @@ run:
 	cd $(DEPLOY_DIR) && npm ci --omit=dev && \
 	set -a && . ../$(ENV_FILE) && set +a && \
 	export NODE_ENV=$${NODE_ENV:-production} && \
+	export PATH="$${HOME}/.bun/bin:/usr/local/bin:$${PATH}" && \
+	command -v bun >/dev/null || (echo "bun is not installed or not on PATH" && exit 1) && \
 	pm2 delete $(APP_NAME) 2>/dev/null || true && \
-	pm2 start dist/main.js --name $(APP_NAME) --cwd $(DEPLOY_DIR) --update-env && \
+	pm2 start "$$(command -v bun)" --name $(APP_NAME) --cwd $(DEPLOY_DIR) --update-env -- dist/main.js && \
 	pm2 save
 
 	@echo ""

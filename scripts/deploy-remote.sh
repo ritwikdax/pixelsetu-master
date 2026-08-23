@@ -61,11 +61,18 @@ mkdir -p deploy
 tar -xzf "releases/\${ARCHIVE_NAME}" -C deploy
 rm -f "releases/\${ARCHIVE_NAME}"
 
+export PATH="\${HOME}/.bun/bin:/usr/local/bin:\${PATH}"
+if ! command -v bun >/dev/null 2>&1; then
+  echo "bun is not installed or not on PATH for this user" >&2
+  exit 1
+fi
+BUN_BIN="\$(command -v bun)"
+
 cd "\${REMOTE_PATH}/deploy"
 npm ci --omit=dev
 
 pm2 delete "\${APP_NAME}" 2>/dev/null || true
-pm2 start "dist/main.js" --name "\${APP_NAME}" --cwd "\${REMOTE_PATH}/deploy" --update-env
+pm2 start "\${BUN_BIN}" --name "\${APP_NAME}" --cwd "\${REMOTE_PATH}/deploy" --update-env -- dist/main.js
 pm2 save
 
 echo ""
