@@ -15,6 +15,22 @@ const APP_ERRORS = {
     code: 401,
     message: 'Unauthorized access',
   },
+  ForbiddenError: {
+    code: 403,
+    message: 'Forbidden',
+  },
+  ConflictError: {
+    code: 409,
+    message: 'Conflict',
+  },
+  GoneError: {
+    code: 410,
+    message: 'Resource is gone',
+  },
+  PayloadTooLargeError: {
+    code: 413,
+    message: 'Payload too large',
+  },
   InternalServerError: {
     code: 500,
     message: 'Internal server error',

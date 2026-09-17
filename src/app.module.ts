@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { GDriveModule, TelegramModule } from './modules';
 import { StockModule } from './modules/stock';
 import { CommonModule } from './modules/common/common.module';
-import { IdentityModule, StudioModule } from './apps';
+import { DoxModule, IdentityModule, StudioModule } from './apps';
 
 @Module({
   imports: [
@@ -14,6 +14,7 @@ import { IdentityModule, StudioModule } from './apps';
     GDriveModule,
     IdentityModule,
     StudioModule,
+    DoxModule,
   ],
   controllers: [AppController],
   providers: [AppService],
