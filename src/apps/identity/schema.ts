@@ -10,7 +10,7 @@ export const OrganizationSchema = z.object({
   ownerId: z.string(),
   ownerEmail: z.email(),
   displayName: z.string().optional(),
-  namespace: z.string(),
+  namespace: z.string().optional(),
   region: z.string().optional().default('IN'),
   address: z.string().optional(),
   alternativePhone: z.string().optional(),
