@@ -137,6 +137,7 @@ export class Repository<T extends EntityMetadata> {
     collectionName: string,
     id: string,
     entity: Partial<T>,
+    scopeFilter: Filter<any> = {},
   ): Promise<void> {
     this.logger.debug(`update collection=${collectionName} id=${id}`);
     try {
@@ -145,7 +146,10 @@ export class Repository<T extends EntityMetadata> {
         updatedAt: new Date(),
       };
       const collection = this.db.collection(collectionName);
-      await collection.updateOne({ id }, { $set: entityWithUpdatedAt });
+      await collection.updateOne(
+        { id, ...scopeFilter },
+        { $set: entityWithUpdatedAt },
+      );
     } catch (err) {
       this.logger.error(
         `update failed collection=${collectionName} id=${id}`,
@@ -155,11 +159,15 @@ export class Repository<T extends EntityMetadata> {
     }
   }
 
-  async delete(collectionName: string, id: string): Promise<DeleteResult> {
+  async delete(
+    collectionName: string,
+    id: string,
+    scopeFilter: Filter<any> = {},
+  ): Promise<DeleteResult> {
     this.logger.debug(`delete collection=${collectionName} id=${id}`);
     try {
       const collection = this.db.collection(collectionName);
-      return await collection.deleteOne({ id });
+      return await collection.deleteOne({ id, ...scopeFilter });
     } catch (err) {
       this.logger.error(
         `delete failed collection=${collectionName} id=${id}`,

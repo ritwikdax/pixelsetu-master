@@ -6,7 +6,7 @@ import { CookieService } from '../cookie.service';
 const DEFAULT_POST_LOGIN_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://home.pixelsetu.com'
-    : 'http://localhost:3001';
+    : 'http://localhost:3002';
 
 function resolvePostLoginBaseUrl(state: unknown): string {
   if (typeof state !== 'string' || !state) {

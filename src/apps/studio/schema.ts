@@ -47,16 +47,18 @@ export const AlbumStatusSchema = z.enum([
   'not_started',
   'in_progress',
   'submitted',
+  're_opened',
 ]);
 
 export const AlbumSchema = z.object({
-  id: z.string(),
-  projectName: z.string(),
-  projectId: z.string(),
-  name: z.string(),
+  id: z.uuidv7(),
+  projectName: z.string().max(100).min(2),
+  projectId: z.uuidv7(),
+  name: z.string().max(100).min(2),
   isSelectionAllowed: z.boolean(),
-  maxSelectionCount: z.number(),
-  alreadySelectedCount: z.number().optional(),
+  maxSelectionCount: z.number().max(5000).min(1),
+  alreadySelectedCount: z.number().default(0).optional(),
+  isSubmitted: z.boolean().default(false).optional(),
   status: AlbumStatusSchema,
 });
 
@@ -72,7 +74,12 @@ export const UpdateAlbumSchema = AlbumSchema.omit({
   id: true,
   projectId: true,
   projectName: true,
-}).partial();
+})
+  .extend({
+    alreadySelectedCount: z.number().optional(),
+    isSubmitted: z.boolean().optional(),
+  })
+  .partial();
 
 export const PaymentModeSchema = z.enum(['online', 'offline']);
 

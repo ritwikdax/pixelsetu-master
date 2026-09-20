@@ -51,12 +51,12 @@ export class AuthGuard implements CanActivate {
       ? authHeader.slice(7)
       : null;
 
-    if (!tokenFromCookie && !tokenFromHeader) {
+    if (!tokenFromHeader && !tokenFromCookie) {
       this.logger.warn('Unauthorized: no token provided');
       throw new AppError('UnauthorizedError', 'No token provided');
     }
 
-    const token = tokenFromCookie || tokenFromHeader;
+    const token = tokenFromHeader || tokenFromCookie;
 
     const decodedToken = this.jwtService.verify<Token>(token);
 
@@ -67,10 +67,7 @@ export class AuthGuard implements CanActivate {
 
     if (decodedToken.mfaPending && !allowMfaPending) {
       this.logger.warn('Unauthorized: MFA verification required');
-      throw new AppError(
-        'UnauthorizedError',
-        'MFA verification required',
-      );
+      throw new AppError('UnauthorizedError', 'MFA verification required');
     }
 
     this.ctx.set('userId', decodedToken.userId);

@@ -31,12 +31,12 @@ export class ContextService {
     return requestContextAls.getStore()?.get(key);
   }
 
-  getOrThrow<K extends keyof IStore>(key: K): IStore[K] {
+  getOrThrow<K extends keyof IStore>(key: K): NonNullable<IStore[K]> {
     const value = this.getStore().get(key);
     if (value === undefined) {
       throw new Error(`Key ${String(key)} not found in context store`);
     }
-    return value;
+    return value as NonNullable<IStore[K]>;
   }
 
   set<K extends keyof IStore>(key: K, value: IStore[K]): void {

@@ -6,11 +6,23 @@ import {
   UpdateAlbum,
   CreatePayment,
   UpdatePayment,
+  type Album,
 } from './schema';
 import { COLLECTION_NAME } from './const';
 import { Injectable } from '@nestjs/common';
-import { uuidv7 } from 'uuidv7';
+import { Readable } from 'stream';
 import { StudioRepository } from './studio.repo';
+import {
+  formatDate,
+  formatDateTime,
+  formatDownloadFilename,
+  generateRandomPassword,
+  humanizeLabel,
+} from './utils';
+
+const LIST_DIVIDER = '='.repeat(72);
+const LIST_RULE = '-'.repeat(72);
+const META_LABEL_WIDTH = 18;
 
 @Injectable()
 export class StudioService {
@@ -31,15 +43,23 @@ export class StudioService {
   async createProject(project: Project) {
     const orgId = this.context.getOrThrow('orgId');
     const now = new Date();
-    const newProject = {
+    const password = generateRandomPassword();
+
+    return this.repository.create(COLLECTION_NAME.PROJECT, {
       ...project,
       orgId,
-    };
-    return this.repository.create(COLLECTION_NAME.PROJECT, newProject);
+      password,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 
   async updateProject(id: string, project: Project) {
-    return await this.studioRepository.updateProject(id, project);
+    return await this.studioRepository.updateProject(
+      id,
+      this.context.getOrThrow('orgId'),
+      project,
+    );
   }
 
   async getProjectById(id: string) {
@@ -72,7 +92,10 @@ export class StudioService {
   }
 
   async deleteProjectById(projectId: string) {
-    return await this.studioRepository.deleteProjectById(projectId);
+    return await this.studioRepository.deleteProjectById(
+      projectId,
+      this.context.getOrThrow('orgId'),
+    );
   }
 
   //==================== ALBUMS ====================
@@ -110,6 +133,8 @@ export class StudioService {
     const { projectId, projectName, status, ...rest } = album;
     return this.repository.create(COLLECTION_NAME.ALBUM, {
       ...rest,
+      alreadySelectedCount: 0,
+
       projectId,
       projectName,
       status: status ?? 'not_started',
@@ -117,14 +142,158 @@ export class StudioService {
     });
   }
 
-  async updateAlbum(projectId: string, id: string, album: UpdateAlbum) {
-    await this.getAlbumById(id);
-    await this.repository.update(COLLECTION_NAME.ALBUM, id, album);
+  async updateAlbum(id: string, album: UpdateAlbum) {
+    const patch = Object.fromEntries(
+      Object.entries(album).filter(([, value]) => value !== undefined),
+    );
+
+    return await this.repository.update(COLLECTION_NAME.ALBUM, id, patch, {
+      orgId: this.context.getOrThrow('orgId'),
+    });
   }
 
-  async deleteAlbum(projectId: string, id: string) {
+  async deleteAlbum(id: string) {
     await this.getAlbumById(id);
-    return this.repository.delete(COLLECTION_NAME.ALBUM, id);
+    return this.studioRepository.deleteAlbum(
+      id,
+      this.context.getOrThrow('orgId'),
+    );
+  }
+
+  async downloadAlbumSelectionList(albumId: string): Promise<{
+    stream: Readable;
+    filename: string;
+  }> {
+    const album = (await this.getAlbumById(albumId)) as Album;
+    const project = (await this.getProjectById(album.projectId)) as Project | null;
+    const orgId = this.context.getOrThrow('orgId');
+    const selectedCount = await this.studioRepository.countSelectedImages(
+      album.id,
+      album.projectId,
+      orgId,
+    );
+
+    const cursor = this.studioRepository.streamSelectedImages(
+      album.id,
+      album.projectId,
+      orgId,
+    );
+
+    const header = this.formatSelectionListHeader(
+      album,
+      project,
+      selectedCount,
+    );
+
+    async function* generateList() {
+      yield header;
+
+      let index = 0;
+      let currentFolder: string | undefined;
+      const comments: Array<{
+        name: string;
+        folderName: string;
+        comment: string;
+      }> = [];
+
+      try {
+        for await (const image of cursor) {
+          index += 1;
+          const folderName = image.folderName?.trim() || 'Ungrouped';
+
+          if (currentFolder !== folderName) {
+            if (currentFolder !== undefined) {
+              yield '\n';
+            }
+            yield `${folderName}\n`;
+            currentFolder = folderName;
+          }
+
+          yield `  ${image.name}\n`;
+
+          const comment = image.comment?.trim();
+          if (comment) {
+            comments.push({ name: image.name, folderName, comment });
+          }
+        }
+      } finally {
+        await cursor.close();
+      }
+
+      if (index === 0) {
+        yield '  No images have been selected for this album yet.\n\n';
+      } else {
+        yield '\n';
+      }
+
+      if (comments.length > 0) {
+        yield `${LIST_RULE}\nCOMMENTS (${comments.length})\n${LIST_RULE}\n\n`;
+        for (const item of comments) {
+          yield `${item.name}  •  ${item.folderName}\n`;
+          for (const line of item.comment.split(/\r?\n/)) {
+            yield `  ${line}\n`;
+          }
+          yield '\n';
+        }
+      }
+
+      yield `${LIST_RULE}\nEND OF LIST  •  ${index} image${index === 1 ? '' : 's'}\n${LIST_DIVIDER}\n`;
+    }
+
+    return {
+      stream: Readable.from(generateList(), { encoding: 'utf8' }),
+      filename: formatDownloadFilename([
+        project?.name ?? album.projectName,
+        album.name,
+      ]),
+    };
+  }
+
+  private formatSelectionListHeader(
+    album: Album,
+    project: Project | null,
+    selectedCount: number,
+  ): string {
+    const yesNo = (value: boolean | undefined) => (value ? 'Yes' : 'No');
+    const generatedAt = formatDateTime(new Date());
+
+    return [
+      `${LIST_DIVIDER}`,
+      'PIXELSETU  •  ALBUM SELECTION LIST',
+      `${LIST_DIVIDER}`,
+      '',
+      'PROJECT',
+      metaLine('Name', project?.name ?? album.projectName),
+      metaLine('Display name', project?.displayName),
+      metaLine('Phone', project?.phone),
+      metaLine('Email', project?.email),
+      metaLine('Category', humanizeLabel(project?.bookingCategory)),
+      metaLine('Booking date', formatDate(project?.dateOfBooking)),
+      metaLine('Status', humanizeLabel(project?.status)),
+      metaLine(
+        'Quotation',
+        project?.quotationAmount !== undefined
+          ? String(project.quotationAmount)
+          : '—',
+      ),
+      metaLine('Softcopy URL', project?.softcopyUrl),
+      '',
+      'ALBUM',
+      metaLine('Name', album.name),
+      metaLine('Status', humanizeLabel(album.status)),
+      metaLine(
+        'Selection',
+        `${selectedCount} selected / ${album.maxSelectionCount} max`,
+      ),
+      metaLine('Selection allowed', yesNo(album.isSelectionAllowed)),
+      metaLine('Submitted', yesNo(album.isSubmitted)),
+      metaLine('Generated at', generatedAt),
+      '',
+      LIST_RULE,
+      `SELECTED IMAGES (${selectedCount})`,
+      LIST_RULE,
+      '',
+    ].join('\n') + '\n';
   }
 
   async getPaymentsByProjectId(projectId: string) {
@@ -162,12 +331,16 @@ export class StudioService {
 
   async updatePayment(projectId: string, id: string, payment: UpdatePayment) {
     await this.getPaymentById(projectId, id);
-    await this.repository.update(COLLECTION_NAME.PAYMENT, id, payment);
+    await this.repository.update(COLLECTION_NAME.PAYMENT, id, payment, {
+      orgId: this.context.getOrThrow('orgId'),
+    });
   }
 
   async deletePayment(projectId: string, id: string) {
     await this.getPaymentById(projectId, id);
-    return this.repository.delete(COLLECTION_NAME.PAYMENT, id);
+    return this.repository.delete(COLLECTION_NAME.PAYMENT, id, {
+      orgId: this.context.getOrThrow('orgId'),
+    });
   }
 
   async listPayments(query: ListQuery) {
@@ -177,4 +350,8 @@ export class StudioService {
       searchFields: ['name', 'projectName', 'projectId'],
     });
   }
+}
+
+function metaLine(label: string, value: string | undefined | null): string {
+  return `  ${label.padEnd(META_LABEL_WIDTH)}: ${value?.trim() ? value : '—'}`;
 }

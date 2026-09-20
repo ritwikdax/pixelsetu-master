@@ -13,6 +13,7 @@ export interface IStore {
   email: string;
   role: ApplicationRole;
   permissions: string[]; //Not in use yet
+  projectId?: string;
 }
 
 export class ContextStore {

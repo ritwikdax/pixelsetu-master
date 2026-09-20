@@ -8,7 +8,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   const logger = new AppLogger('Bootstrap');
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   const isProduction = process.env.NODE_ENV === 'production';
   const pixelsetuOrigin = /^https?:\/\/([a-zA-Z0-9-]+\.)*pixelsetu\.com$/;
   const localhostOrigin = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;

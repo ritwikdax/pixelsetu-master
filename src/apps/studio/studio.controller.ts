@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { StudioService } from './studio.service';
@@ -25,6 +26,7 @@ import {
 } from './schema';
 import { ValidateSchema, ListQuerySchema } from '@/modules/common';
 import type { ListQuery } from '@/modules/common';
+import type { Response } from 'express';
 import z from 'zod';
 import { Role, RoleGuard } from '@/modules/rbac';
 
@@ -130,6 +132,29 @@ export class StudioController {
   @ValidateSchema({
     params: z.uuidv7(),
   })
+  @Get('albums/:id/download-list')
+  async downloadAlbumList(@Param('id') id: string, @Res() res: Response) {
+    const { stream, filename } =
+      await this.studioService.downloadAlbumSelectionList(id);
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.status(500).end();
+        return;
+      }
+      res.end();
+    });
+
+    stream.pipe(res);
+  }
+
+  @ValidateSchema({
+    params: z.uuidv7(),
+  })
   @Get('albums/:id')
   async getAlbumById(@Param('id') id: string) {
     return {
@@ -157,13 +182,9 @@ export class StudioController {
     params: z.uuidv7(),
     body: UpdateAlbumSchema,
   })
-  @Patch('albums/projects/:projectId/:id')
-  async updateAlbum(
-    @Param('projectId') projectId: string,
-    @Param('id') id: string,
-    @Body() album: UpdateAlbum,
-  ) {
-    await this.studioService.updateAlbum(projectId, id, album);
+  @Patch('albums/:id')
+  async updateAlbum(@Param('id') id: string, @Body() album: UpdateAlbum) {
+    await this.studioService.updateAlbum(id, album);
     return {
       success: true,
       message: 'Album updated successfully',
@@ -174,12 +195,9 @@ export class StudioController {
   @ValidateSchema({
     params: z.uuidv7(),
   })
-  @Delete('albums/projects/:projectId/:id')
-  async deleteAlbum(
-    @Param('projectId') projectId: string,
-    @Param('id') id: string,
-  ) {
-    await this.studioService.deleteAlbum(projectId, id);
+  @Delete('albums/:id')
+  async deleteAlbum(@Param('id') id: string) {
+    await this.studioService.deleteAlbum(id);
     return {
       success: true,
       message: 'Album deleted successfully',

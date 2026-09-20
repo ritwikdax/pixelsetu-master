@@ -9,7 +9,7 @@
     "build": "nest build && tsc-alias",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "dev": "bun src/main.ts --watch",
+    "dev": "bun --watch src/main.ts",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "NODE_ENV=production sh -c 'nest build && node dist/main.js'",
